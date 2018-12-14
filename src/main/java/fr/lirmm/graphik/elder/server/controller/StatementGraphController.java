@@ -22,6 +22,13 @@ public class StatementGraphController {
 	public static final String origins = "*";
 	
 	@CrossOrigin(origins = origins)
+	@RequestMapping(path = "/", method = RequestMethod.POST)
+	public String Hello() {
+		return "All works!";
+	}
+	
+	
+	@CrossOrigin(origins = origins)
 	@RequestMapping(path = "/api/sg/build", method = RequestMethod.POST)
 	public StatementGraphJSONRepresentation build(@RequestBody UserInput input) throws AtomSetException, IteratorException, ChaseException, HomomorphismException {
 		DefeasibleKnowledgeBase kb = new DefeasibleKnowledgeBase();
