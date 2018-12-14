@@ -22,7 +22,7 @@ public class StatementGraphController {
 	public static final String origins = "*";
 	
 	@CrossOrigin(origins = origins)
-	@RequestMapping(path = "/", method = RequestMethod.POST)
+	@RequestMapping(path = "/", method = RequestMethod.GET)
 	public String Hello() {
 		return "All works!";
 	}
