@@ -1,6 +1,8 @@
-package fr.lirmm.graphik.elder.server.model;
+package fr.lirmm.graphik.elder.server.models;
 
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.LinkedList;
 
 public class KnowledgeBaseRepresentation implements Serializable {
 	private String source;
@@ -9,11 +11,21 @@ public class KnowledgeBaseRepresentation implements Serializable {
 	private boolean selected;
 	private boolean locked;
 	private String type;
+	private Collection<String> editors;
 	
 	public KnowledgeBaseRepresentation() {
 		
 	}
-
+	
+	public KnowledgeBaseRepresentation(String source, String agent_id) {
+		this.source = source;
+		this.agent_id = agent_id;
+		this.dlgp = "";
+		this.selected = true;
+		this.type = "";
+		this.editors = new LinkedList<String>();
+		this.editors.add(source);
+	}
 	public String getSource() {
 		return source;
 	}
@@ -60,6 +72,14 @@ public class KnowledgeBaseRepresentation implements Serializable {
 
 	public void setType(String type) {
 		this.type = type;
+	}
+
+	public Collection<String> getEditors() {
+		return editors;
+	}
+
+	public void setEditors(Collection<String> editors) {
+		this.editors = editors;
 	}
 
 	@Override 

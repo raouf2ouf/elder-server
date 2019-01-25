@@ -1,16 +1,16 @@
-package fr.lirmm.graphik.elder.server.controller;
+package fr.lirmm.graphik.elder.server.controllers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
-import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
-import fr.lirmm.graphik.elder.server.config.AssignPrincipalHandshakeHandler;
+import fr.lirmm.graphik.elder.server.security.UserPrincipal;
 
 @Component
 public class WebSocketEventListener {
@@ -26,11 +26,9 @@ public class WebSocketEventListener {
 
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
-        StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
-
-        String username = (String) headerAccessor.getSessionAttributes().get(AssignPrincipalHandshakeHandler.ATTR_PRINCIPAL);
-        if(username != null) {
-            logger.info("User Disconnected : " + username);
+        UserPrincipal user = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if(user != null) {
+            logger.info("User Disconnected : " + user.getUsername());
         }
     }
 }

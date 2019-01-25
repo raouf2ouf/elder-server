@@ -1,21 +1,24 @@
-package fr.lirmm.graphik.elder.server.model;
+package fr.lirmm.graphik.elder.server.models;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import fr.lirmm.graphik.graal.elder.persistance.StatementGraphJSONRepresentation;
 
 
 @Document(collection = "projects")
 public class Project implements Serializable {
 	@Id
 	private String id;
+	private String name;
+	private String description;
 	private boolean isPublic;
 	private String creator_id;
+	private Collection<String> contributors;
 	private List<KnowledgeBaseRepresentation> kbs;
+	
 	
 	public Project() {}
 
@@ -25,6 +28,22 @@ public class Project implements Serializable {
 
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 	public boolean isPublic() {
@@ -42,6 +61,14 @@ public class Project implements Serializable {
 	public void setCreator_id(String creator_id) {
 		this.creator_id = creator_id;
 	}
+	
+	public Collection<String> getContributors() {
+		return contributors;
+	}
+
+	public void setContributors(Collection<String> contributors) {
+		this.contributors = contributors;
+	}
 
 	public List<KnowledgeBaseRepresentation> getKbs() {
 		return kbs;
@@ -50,6 +77,7 @@ public class Project implements Serializable {
 	public void setKbs(List<KnowledgeBaseRepresentation> kbs) {
 		this.kbs = kbs;
 	}
+
 
 	
 	

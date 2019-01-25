@@ -1,4 +1,4 @@
-package fr.lirmm.graphik.elder.server.model;
+package fr.lirmm.graphik.elder.server.models;
 
 import java.io.Serializable;
 
