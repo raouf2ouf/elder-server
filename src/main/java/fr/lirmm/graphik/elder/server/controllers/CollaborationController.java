@@ -1,8 +1,10 @@
 package fr.lirmm.graphik.elder.server.controllers;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 
+import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +14,7 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,17 +28,14 @@ import fr.lirmm.graphik.elder.server.models.Project;
 import fr.lirmm.graphik.elder.server.models.messages.ResponseMessage;
 import fr.lirmm.graphik.elder.server.repositories.AgentRepository;
 import fr.lirmm.graphik.elder.server.repositories.ProjectRepository;
+import fr.lirmm.graphik.elder.server.security.UserPrincipal;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/collaboration")
 public class CollaborationController {
 	private static final Logger logger = LoggerFactory.getLogger(CollaborationController.class);
-	private static final String ENDPOINT = "/api/collaboration",
-			ENDPOINT_SEND_MESSAGE = "/sg.sendKB",
-			BROADCAST_CHANNEL = "/project",
-			BROADCAST_CHANNEL_ID = "/1";
-	
+	private static final String ENDPOINT = "/api/collaboration";
 	
 	@Autowired
     private SimpMessageSendingOperations messagingTemplate;
@@ -66,7 +66,7 @@ public class CollaborationController {
 		if(null == agent || null == p) {
 			return new ResponseEntity<ResponseMessage>(new ResponseMessage("user or project not found"), HttpStatus.BAD_REQUEST);
 		}
-		KnowledgeBaseRepresentation kb = new KnowledgeBaseRepresentation(agent.getUsername(), agent.getId());
+		KnowledgeBaseRepresentation kb = new KnowledgeBaseRepresentation(agent.getUsername(), agent.getId(), "");
 		
 		boolean agentAlreadyExists = false;
 		for(KnowledgeBaseRepresentation k : p.getKbs()) {
@@ -91,30 +91,66 @@ public class CollaborationController {
 	
 	@RequestMapping(value="/saveKB/{projectId}", method=RequestMethod.POST)
     public ResponseEntity<?> saveKB(@PathVariable String projectId, @RequestBody KnowledgeBaseRepresentation kb) {
-		logger.info("saving KB!!!");
 		Project p = projectRepository.findById(projectId).get();
 		if(null == p) {
 			return new ResponseEntity<ResponseMessage>(new ResponseMessage("Project not found"), HttpStatus.BAD_REQUEST);
 		}
 		
-		boolean alreadyExists = false;
-		for(KnowledgeBaseRepresentation k : p.getKbs()) {
-			if(k.getSource().equals(kb.getSource())) {
-				k.setDlgp(kb.getDlgp());
-				k.setEditors(kb.getEditors());
-				alreadyExists = true;
-				break;
-			}
-		}
-		
-		if(!alreadyExists) {
+		if(null == kb.getId()) {// Kb does not exist
+			kb.setId((new ObjectId()).toString());
 			p.getKbs().add(kb);
+		} else {
+			for(KnowledgeBaseRepresentation k: p.getKbs()) {
+				if(kb.getId().equals(k.getId())) {
+					k.setSource(kb.getSource());
+					k.setDlgp(kb.getDlgp());
+					break;
+				}
+			}
 		}
 		projectRepository.save(p);
 		
-		logger.info(kb.getSource() + " sent this: " + kb.toString());
 		// inform everyone
 		messagingTemplate.convertAndSend(ENDPOINT + "/project/"+p.getId(), kb);
         return new ResponseEntity<KnowledgeBaseRepresentation>(kb, HttpStatus.OK);
+    }
+	
+	@RequestMapping(value="/deleteKB/{projectId}", method=RequestMethod.POST)
+    public ResponseEntity<?> deleteKB(@PathVariable String projectId, @RequestBody KnowledgeBaseRepresentation kb) {
+		UserPrincipal user = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		Project p = projectRepository.findById(projectId).get();
+		if(null == p) {
+			return new ResponseEntity<ResponseMessage>(new ResponseMessage("Project not found"), HttpStatus.BAD_REQUEST);
+		}
+		
+		Iterator<KnowledgeBaseRepresentation> it = p.getKbs().iterator();
+		while(it.hasNext()) {
+			KnowledgeBaseRepresentation k = it.next();
+			if(kb.getId().equals(k.getId())) {
+				it.remove();
+				break;
+			}
+		}
+		projectRepository.save(p);
+		
+		// inform everyone
+		messagingTemplate.convertAndSend(ENDPOINT + "/project/"+p.getId()+"/delete", kb);
+        return new ResponseEntity<KnowledgeBaseRepresentation>(kb, HttpStatus.OK);
+    }
+	
+	@RequestMapping(value="/get/{projectId}/{kbId}", method=RequestMethod.GET)
+    public ResponseEntity<?> getKB(@PathVariable String projectId, @PathVariable String kbId) {
+		Project p = projectRepository.findById(projectId).get();
+		if(null == p) {
+			return new ResponseEntity<ResponseMessage>(new ResponseMessage("Project not found"), HttpStatus.BAD_REQUEST);
+		}
+		KnowledgeBaseRepresentation k = null;
+		for(KnowledgeBaseRepresentation kb: p.getKbs()) {
+			if(kbId.equals(kb.getId())) {
+				k = kb;
+				break;
+			}
+		}
+        return new ResponseEntity<KnowledgeBaseRepresentation>(k, HttpStatus.OK);
     }
 }

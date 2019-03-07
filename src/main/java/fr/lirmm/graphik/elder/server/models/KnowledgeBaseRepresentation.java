@@ -4,7 +4,13 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.LinkedList;
 
+import org.bson.types.ObjectId;
+import org.springframework.data.annotation.Id;
+
 public class KnowledgeBaseRepresentation implements Serializable {
+	
+	@Id
+	private String id;
 	private String source;
 	private String agent_id;
 	private String dlgp;
@@ -17,15 +23,26 @@ public class KnowledgeBaseRepresentation implements Serializable {
 		
 	}
 	
-	public KnowledgeBaseRepresentation(String source, String agent_id) {
+	public KnowledgeBaseRepresentation(String source, String agent_id, String type) {
+		this.id = (new ObjectId()).toString();
 		this.source = source;
 		this.agent_id = agent_id;
 		this.dlgp = "";
 		this.selected = true;
-		this.type = "";
+		this.type = type;
 		this.editors = new LinkedList<String>();
 		this.editors.add(source);
 	}
+	
+	
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
 	public String getSource() {
 		return source;
 	}

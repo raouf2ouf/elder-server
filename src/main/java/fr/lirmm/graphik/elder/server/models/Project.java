@@ -14,6 +14,8 @@ public class Project implements Serializable {
 	private String id;
 	private String name;
 	private String description;
+	private String semantic;
+	private String query;
 	private boolean isPublic;
 	private String creator_id;
 	private Collection<String> contributors;
@@ -44,6 +46,22 @@ public class Project implements Serializable {
 
 	public void setDescription(String description) {
 		this.description = description;
+	}	
+	
+	public String getSemantic() {
+		return semantic;
+	}
+
+	public void setSemantic(String semantic) {
+		this.semantic = semantic;
+	}
+
+	public String getQuery() {
+		return query;
+	}
+
+	public void setQuery(String query) {
+		this.query = query;
 	}
 
 	public boolean isPublic() {
