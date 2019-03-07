@@ -5,11 +5,9 @@ import java.util.Collection;
 import java.util.LinkedList;
 
 import org.bson.types.ObjectId;
-import org.springframework.data.annotation.Id;
 
 public class KnowledgeBaseRepresentation implements Serializable {
-	
-	@Id
+
 	private String id;
 	private String source;
 	private String agent_id;
