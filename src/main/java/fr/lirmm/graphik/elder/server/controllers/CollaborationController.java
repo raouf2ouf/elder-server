@@ -10,9 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.DestinationVariable;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -96,7 +93,7 @@ public class CollaborationController {
 			return new ResponseEntity<ResponseMessage>(new ResponseMessage("Project not found"), HttpStatus.BAD_REQUEST);
 		}
 		
-		if(null == kb.getId()) {// Kb does not exist
+		if(null == kb.getId()) {// Kb does not exist			
 			kb.setId((new ObjectId()).toString());
 			p.getKbs().add(kb);
 		} else {
@@ -114,6 +111,38 @@ public class CollaborationController {
 		messagingTemplate.convertAndSend(ENDPOINT + "/project/"+p.getId(), kb);
         return new ResponseEntity<KnowledgeBaseRepresentation>(kb, HttpStatus.OK);
     }
+	
+	
+	@RequestMapping(value="/saveAllKBs/{projectId}", method=RequestMethod.POST)
+    public ResponseEntity<?> saveAllKBs(@PathVariable String projectId, @RequestBody Collection<KnowledgeBaseRepresentation> kbs) {
+		Project p = projectRepository.findById(projectId).get();
+		if(null == p) {
+			return new ResponseEntity<ResponseMessage>(new ResponseMessage("Project not found"), HttpStatus.BAD_REQUEST);
+		}
+		
+		for(KnowledgeBaseRepresentation kb: kbs) {
+			if(null == kb.getId()) {// Kb does not exist
+				kb.setId((new ObjectId()).toString());
+				p.getKbs().add(kb);
+			} else {
+				for(KnowledgeBaseRepresentation k: p.getKbs()) {
+					if(kb.getId().equals(k.getId())) {
+						kb.setAgent_id(k.getAgent_id());
+						kb.setEditors(k.getEditors());
+						break;
+					}
+				}
+			}
+			// inform everyone
+			messagingTemplate.convertAndSend(ENDPOINT + "/project/"+p.getId(), kb);
+		}
+		p.getKbs().clear();
+		p.getKbs().addAll(kbs);
+		projectRepository.save(p);
+		
+        return new ResponseEntity<Collection<KnowledgeBaseRepresentation>>(kbs, HttpStatus.OK);
+    }
+	
 	
 	@RequestMapping(value="/deleteKB/{projectId}", method=RequestMethod.POST)
     public ResponseEntity<?> deleteKB(@PathVariable String projectId, @RequestBody KnowledgeBaseRepresentation kb) {
