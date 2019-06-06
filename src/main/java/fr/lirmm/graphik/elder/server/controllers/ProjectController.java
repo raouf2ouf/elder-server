@@ -1,6 +1,7 @@
 package fr.lirmm.graphik.elder.server.controllers;
 
 import java.util.Collection;
+import java.util.LinkedList;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,9 +29,19 @@ public class ProjectController {
 	ProjectRepository projectRepository;
 	
 	@RequestMapping(value="/get/{projectId}", method=RequestMethod.GET)
-	public Project getProject(@PathVariable String projectId) {
+	public ResponseEntity<?> getProject(@PathVariable String projectId) {
 		Project p = this.projectRepository.findById(projectId).get();
-		return p;
+		if(null == p) return new ResponseEntity<ResponseMessage>(new ResponseMessage("Project not found!"),
+				HttpStatus.BAD_REQUEST);
+
+		UserPrincipal user = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		if(p.getContributors().contains(user.getId())) {
+			return new ResponseEntity<Project>(p,
+					HttpStatus.OK);
+		}
+
+		return new ResponseEntity<ResponseMessage>(new ResponseMessage("Unauthorized!"),
+				HttpStatus.BAD_REQUEST);
 	}
 	
 	@RequestMapping(value="/get/created", method=RequestMethod.GET)
@@ -43,7 +54,7 @@ public class ProjectController {
 	@RequestMapping(value="/get/collaboration", method=RequestMethod.GET)
 	public Collection<Project> getCollaborationProjects() {
 		UserPrincipal user = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		Collection<Project> ps = this.projectRepository.findCollaborations(user.getUsername());
+		Collection<Project> ps = this.projectRepository.findCollaborations(user.getId());
 		return ps;
 	}
 	
@@ -80,6 +91,8 @@ public class ProjectController {
 		UserPrincipal user = (UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 		project.setCreator_id(user.getId());
 		project.getKbs().add(new KnowledgeBaseRepresentation("Common", user.getId(), "common"));
+		project.setContributors(new LinkedList<String>());
+		project.getContributors().add(user.getId());
 		this.projectRepository.save(project);
 		return project;
 	}

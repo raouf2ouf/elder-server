@@ -16,6 +16,6 @@ public interface ProjectRepository extends MongoRepository<Project, String>{
 	@Query("{ 'creator_id' : ?0 }")
 	Collection<Project> findByCreator_id(String creator_id);
 	
-	@Query("{ 'contributors' : ?0 }")
+	@Query("{ $and : [{'contributors' : ?0}, {'creator_id' : {$ne: ?0}}] }")
 	Collection<Project> findCollaborations(String username);
 }

@@ -32,8 +32,9 @@ import fr.lirmm.graphik.elder.server.security.UserPrincipal;
 @RequestMapping("/api/collaboration")
 public class CollaborationController {
 	private static final Logger logger = LoggerFactory.getLogger(CollaborationController.class);
-	private static final String ENDPOINT = "/api/collaboration";
-	
+	private static final String ENDPOINT = "/project";
+	private static final String DELETE_ENDPOINT = "/delete";
+
 	@Autowired
     private SimpMessageSendingOperations messagingTemplate;
 	
@@ -63,27 +64,14 @@ public class CollaborationController {
 		if(null == agent || null == p) {
 			return new ResponseEntity<ResponseMessage>(new ResponseMessage("user or project not found"), HttpStatus.BAD_REQUEST);
 		}
-		KnowledgeBaseRepresentation kb = new KnowledgeBaseRepresentation(agent.getUsername(), agent.getId(), "");
-		
-		boolean agentAlreadyExists = false;
-		for(KnowledgeBaseRepresentation k : p.getKbs()) {
-			if(k.getSource().equals(kb.getSource())) {
-				agentAlreadyExists = true;
-				break;
-			}
+		if(p.getContributors().contains(agent.getId())) {
+			return new ResponseEntity<ResponseMessage>(new ResponseMessage(username + " is already a collaborator in this project!"), HttpStatus.BAD_REQUEST);
 		}
-		if(!agentAlreadyExists) {
-			if(null == p.getContributors()) p.setContributors(new LinkedList<String>());
-			p.getContributors().add(agent.getUsername());
-			p.getKbs().add(kb);
-			projectRepository.save(p);
-			kb.setLocked(true);
-			// inform everyone
-			messagingTemplate.convertAndSend(ENDPOINT + "/project/"+p.getId(), kb);
-		}
-		
-		
-		return new ResponseEntity<ResponseMessage>(new ResponseMessage("User added"), HttpStatus.OK);
+
+		p.getContributors().add(agent.getId());
+		projectRepository.save(p);
+
+		return new ResponseEntity<ResponseMessage>(new ResponseMessage(username + " can now edit this project!"), HttpStatus.OK);
 	}
 	
 	@RequestMapping(value="/saveKB/{projectId}", method=RequestMethod.POST)
@@ -106,9 +94,9 @@ public class CollaborationController {
 			}
 		}
 		projectRepository.save(p);
-		
+
 		// inform everyone
-		messagingTemplate.convertAndSend(ENDPOINT + "/project/"+p.getId(), kb);
+		messagingTemplate.convertAndSend(ENDPOINT + "/" +p.getId(), kb);
         return new ResponseEntity<KnowledgeBaseRepresentation>(kb, HttpStatus.OK);
     }
 	
@@ -134,7 +122,7 @@ public class CollaborationController {
 				}
 			}
 			// inform everyone
-			messagingTemplate.convertAndSend(ENDPOINT + "/project/"+p.getId(), kb);
+			messagingTemplate.convertAndSend(ENDPOINT + "/"+p.getId(), kb);
 		}
 		p.getKbs().clear();
 		p.getKbs().addAll(kbs);
@@ -163,7 +151,7 @@ public class CollaborationController {
 		projectRepository.save(p);
 		
 		// inform everyone
-		messagingTemplate.convertAndSend(ENDPOINT + "/project/"+p.getId()+"/delete", kb);
+		messagingTemplate.convertAndSend(DELETE_ENDPOINT + "/" + p.getId(), kb);
         return new ResponseEntity<KnowledgeBaseRepresentation>(kb, HttpStatus.OK);
     }
 	

@@ -19,6 +19,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.setApplicationDestinationPrefixes("/api/collaboration/app");
         registry.setUserDestinationPrefix("/api/collaboration/agent");
-        registry.enableSimpleBroker("/api/collaboration/project", "/api/collaboration/reply");
+        registry.enableSimpleBroker("/project", "/delete");
     }
 }
