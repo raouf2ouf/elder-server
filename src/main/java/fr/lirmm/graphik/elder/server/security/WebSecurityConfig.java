@@ -1,6 +1,7 @@
 package fr.lirmm.graphik.elder.server.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -43,6 +44,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http.cors().and().csrf().disable()
         		.authorizeRequests()
+                .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
+                .antMatchers("/**").permitAll()
                 .antMatchers("/api/auth/**", "/api/sg/*", "/ws", "/ws/**").permitAll()
                 .anyRequest().authenticated()
                 .and()
